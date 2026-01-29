@@ -42,3 +42,18 @@ yarn-error.log*
 temp/
 tmp/
 *.tmp
+
+# Sensitive files - DO NOT COMMIT
+*.pem
+*.key
+*credentials*
+*CREDENTIALS*
+*password*
+*PASSWORD*
+DB_CREDENTIALS.md
+DATABASE_SETUP_COMPLETE.md
+docs/DATABASE_CONNECTION.md
+scripts/setup-db-ec2.sh
+.env
+.env.*
+!.env.example
