@@ -41,4 +41,31 @@ export class UserController {
       next(error);
     }
   }
+
+  async addTag(req: Request, res: Response, next: NextFunction) {
+    try {
+      const tag = await userService.addUserTag(req.user!.userId, req.body);
+      sendSuccess(res, { tag }, 'Tag added successfully', 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getTags(req: Request, res: Response, next: NextFunction) {
+    try {
+      const tags = await userService.getUserTags(req.user!.userId);
+      sendSuccess(res, { tags });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async deleteTag(req: Request, res: Response, next: NextFunction) {
+    try {
+      await userService.deleteUserTag(req.user!.userId, parseInt(req.params.tagId));
+      sendSuccess(res, null, 'Tag deleted successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }

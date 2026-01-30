@@ -1,0 +1,74 @@
+---
+description: PostgreSQL database patterns and schema conventions
+globs: "**/{database,service,services}*.ts"
+alwaysApply: false
+---
+
+# Database Patterns
+
+## Query Helper
+
+Always use parameterized queries:
+
+```typescript
+// ✅ GOOD: Parameterized
+const result = await query(
+  'SELECT * FROM app_users WHERE email = $1 AND active_or_archive = $2',
+  [email, true]
+);
+
+// ❌ BAD: String interpolation (SQL injection risk)
+const result = await query(`SELECT * FROM app_users WHERE email = '${email}'`);
+```
+
+## Table Naming
+
+- Snake_case: `app_users`, `study_sessions`
+- Prefix by domain: `app_`, `master_`, `study_`
+
+## Key Tables (from DB schema)
+
+| Table | Purpose |
+|-------|---------|
+| `app_users` | User accounts |
+| `app_access_master_roles` | Role definitions |
+| `app_access_user_sessions` | Auth sessions |
+| `app_user_tags` | User skills/interests |
+| `study_sessions` | Study buddy sessions |
+| `user_learning_roadmaps` | Learning paths |
+
+## Common Patterns
+
+```typescript
+// Check existence
+const exists = await query(
+  'SELECT id FROM app_users WHERE email = $1',
+  [email]
+);
+if (exists.rows.length > 0) throw new AppError('User exists', 409);
+
+// Insert with RETURNING
+const result = await query(
+  `INSERT INTO app_users (username, email, password_hash)
+   VALUES ($1, $2, $3)
+   RETURNING id, username, email, created_at`,
+  [username, email, hash]
+);
+
+// Update with atomic increment
+await query(
+  'UPDATE app_users SET access_failed_count = access_failed_count + 1 WHERE id = $1',
+  [userId]
+);
+```
+
+## Joins
+
+```typescript
+const result = await query(`
+  SELECT u.*, r.name as role_name 
+  FROM app_users u
+  LEFT JOIN app_access_master_roles r ON u.primary_role_id = r.id
+  WHERE u.id = $1
+`, [userId]);
+```

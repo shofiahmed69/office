@@ -1,5 +1,5 @@
 import { query } from '../config/database';
-import { User } from '../types';
+import { User, UserTag } from '../types';
 import { AppError } from '../middleware/error.middleware';
 
 export class UserService {
@@ -85,6 +85,46 @@ export class UserService {
       users: users.rows,
       total: parseInt(count.rows[0].count),
     };
+  }
+
+  async addUserTag(userId: number, tagData: {
+    tagName: string;
+    tagValue?: string;
+    masterTagId?: number;
+    ratingScore?: number;
+    sourceType?: 'manual' | 'ai' | 'imported';
+  }): Promise<UserTag> {
+    const result = await query(
+      `INSERT INTO app_user_tags 
+       (user_id, tag_name, tag_value, master_tag_id, rating_score, source_type, is_filled, created_by_user_id)
+       VALUES ($1, $2, $3, $4, $5, $6, true, $1)
+       RETURNING id, user_id, tag_name, tag_value, master_tag_id, rating_score, source_type, is_filled, is_verified, created_at`,
+      [userId, tagData.tagName, tagData.tagValue || null, tagData.masterTagId || null, 
+       tagData.ratingScore || null, tagData.sourceType || 'manual']
+    );
+    return result.rows[0];
+  }
+
+  async getUserTags(userId: number): Promise<UserTag[]> {
+    const result = await query(
+      `SELECT id, user_id, tag_name, tag_value, master_tag_id, rating_score, 
+              source_type, is_filled, is_verified, created_at
+       FROM app_user_tags 
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+    return result.rows;
+  }
+
+  async deleteUserTag(userId: number, tagId: number): Promise<void> {
+    const result = await query(
+      'DELETE FROM app_user_tags WHERE id = $1 AND user_id = $2 RETURNING id',
+      [tagId, userId]
+    );
+    if (result.rows.length === 0) {
+      throw new AppError('Tag not found', 404);
+    }
   }
 }
 

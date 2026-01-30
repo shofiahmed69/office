@@ -1,0 +1,80 @@
+---
+description: Shared package types, utils, and constants
+globs: packages/shared/**/*.ts
+alwaysApply: false
+---
+
+# Shared Package Patterns
+
+## Purpose
+
+`@scholarpass/shared` contains code used by both API and Web:
+
+- **types/** - TypeScript interfaces
+- **utils/** - Pure utility functions
+- **constants.ts** - Shared constants
+
+## Type Definitions
+
+Export interfaces for domain entities:
+
+```typescript
+// ✅ GOOD: Well-documented interfaces
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  // ...
+}
+
+export interface APIResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+```
+
+## Constants
+
+Use `as const` for type safety:
+
+```typescript
+// ✅ GOOD: Const assertions
+export const USER_ROLES = {
+  SUPER_ADMIN: 1,
+  ADMIN: 2,
+  STUDENT: 3,
+} as const;
+
+export const VALIDATION = {
+  PASSWORD_MIN_LENGTH: 8,
+  USERNAME_MIN_LENGTH: 3,
+} as const;
+```
+
+## Utilities
+
+Keep utils pure, documented, and generic:
+
+```typescript
+// ✅ GOOD: Pure, documented utility
+/**
+ * Formats a date string to locale format
+ */
+export function formatDate(date: string | Date, locale = 'en-US'): string {
+  return new Date(date).toLocaleDateString(locale);
+}
+```
+
+## Export Pattern
+
+Re-export from `index.ts`:
+
+```typescript
+// packages/shared/src/index.ts
+export * from './types';
+export * from './utils';
+export * from './constants';
+```

@@ -16,6 +16,14 @@ import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import healthRoutes from './routes/health.routes';
 import docsRoutes from './routes/docs.routes';
+import assessmentRoutes from './routes/assessment.routes';
+import roadmapRoutes from './routes/roadmap.routes';
+import contentRoutes from './routes/content.routes';
+import studyBuddyRoutes from './routes/studyBuddy.routes';
+import sessionRoutes from './routes/session.routes';
+import aiAssistantRoutes from './routes/aiAssistant.routes';
+import analyticsRoutes from './routes/analytics.routes';
+import adminRoutes from './routes/admin.routes';
 
 // Load environment variables
 dotenv.config();
@@ -73,6 +81,14 @@ app.use('/api/docs', docsRoutes);
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/assessments', assessmentRoutes);
+app.use('/api/roadmaps', roadmapRoutes);
+app.use('/api/content', contentRoutes);
+app.use('/api/study-buddies', studyBuddyRoutes);
+app.use('/api/sessions', sessionRoutes);
+app.use('/api/ai-assistant', aiAssistantRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -86,6 +102,14 @@ app.get('/', (req, res) => {
       docs: '/api/docs',
       auth: '/api/auth',
       users: '/api/users',
+      assessments: '/api/assessments',
+      roadmaps: '/api/roadmaps',
+      content: '/api/content',
+      studyBuddies: '/api/study-buddies',
+      sessions: '/api/sessions',
+      aiAssistant: '/api/ai-assistant',
+      analytics: '/api/analytics',
+      admin: '/api/admin',
     },
   });
 });

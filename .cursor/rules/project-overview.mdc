@@ -1,0 +1,53 @@
+---
+description: ScholarPass project overview and conventions
+alwaysApply: true
+---
+
+# ScholarPass Project Overview
+
+**AI-Powered Personalized Learning Platform** - Turborepo monorepo with TypeScript.
+
+## Project Structure
+
+```
+apps/
+  api/       # Express.js REST API (Node.js 20+)
+  web/       # Next.js 14+ frontend (App Router)
+packages/
+  shared/    # Common types, utils, constants
+```
+
+## Key Conventions
+
+- **Package manager**: npm workspaces
+- **Build**: Turborepo (`turbo run dev/build/test`)
+- **Formatting**: Prettier (no semicolons, single quotes, 2-space indent)
+- **Commits**: Conventional commits (feat/fix/docs/refactor)
+- **Node**: v20+ required
+
+## API Response Format
+
+Always use consistent response format:
+
+```typescript
+// Success
+{ success: true, data: T, message?: string }
+
+// Error
+{ success: false, error: string, details?: ValidationError[] }
+
+// Paginated
+{ success: true, data: T[], pagination: { page, limit, total, totalPages } }
+```
+
+## Import Aliases
+
+- API: Relative imports (`../utils/`)
+- Web: `@/` alias maps to `src/`
+- Shared: `@scholarpass/shared`
+
+## Environment
+
+- API runs on port 3001
+- Web runs on port 3000
+- PostgreSQL + Redis required

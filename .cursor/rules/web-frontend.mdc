@@ -1,0 +1,90 @@
+---
+description: Next.js frontend patterns and conventions
+globs: apps/web/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Web Frontend Patterns
+
+## Security
+
+- Do not use API keys, secrets, or credentials in frontend code. All sensitive operations must go through the backend API.
+- Use only `NEXT_PUBLIC_*` for non-sensitive config (e.g. `NEXT_PUBLIC_API_URL`). Never put keys, tokens, or secrets in env vars that are exposed to the browser.
+- All data fetching for external services, AI, or authenticated resources: call backend API; backend holds keys and performs the request.
+- Do not store tokens in localStorage for sensitive data; use httpOnly cookies when the backend supports it, or short-lived tokens and refresh via backend.
+- Sanitize user input before display; let backend validate and authorize all mutations.
+
+## UI and Content
+
+- Do not use emojis in UI labels, messages, or code. Use plain text only.
+- Use proper sentence case and consistent terminology in copy.
+
+## Next.js App Router
+
+- Pages in `app/` directory. Use `layout.tsx` for shared layout and `page.tsx` for routes.
+- Client components need `'use client'` directive; prefer server components by default.
+- Use the centralized API base URL from `NEXT_PUBLIC_API_URL` for all backend calls.
+
+## Responsive Layout (Mobile and PC)
+
+- Design mobile-first. Use Tailwind breakpoints: `sm:`, `md:`, `lg:`, `xl:` for layout and typography.
+- Ensure touch targets are at least 44x44px on mobile. Use adequate padding and spacing.
+- Use flexible layouts: `flex`, `grid`, `min-w-0`, `overflow-hidden` to avoid horizontal scroll.
+- Test viewport: small (320px), medium (768px), large (1024px+). Use responsive containers and avoid fixed widths that break on small screens.
+- Prefer `rem` or Tailwind spacing; avoid hard-coded pixel widths for main layout.
+- Use `meta viewport` in root layout (Next.js default); do not disable zoom on mobile.
+
+## Component Organization
+
+```
+components/
+  ui/        # Reusable primitives (Button, Input, Card)
+  forms/     # Form components (LoginForm)
+  layouts/   # Layout components (Header)
+hooks/       # Custom hooks (useAuth)
+services/   # API service functions (call backend only)
+lib/         # Utilities (api-client)
+```
+
+## API Calls
+
+- All API calls must go to the backend. Use the centralized `apiClient` with `NEXT_PUBLIC_API_URL`:
+
+```typescript
+import { apiClient } from '@/lib/api-client';
+
+const response = await apiClient.post('/api/auth/login', { email, password });
+```
+
+- Do not add third-party API keys in frontend. If a feature needs an external API, add an endpoint in the backend and call that from the frontend.
+
+## State Management (Zustand)
+
+- Use Zustand for client state. Persist only non-sensitive data (e.g. theme, UI preferences). Do not persist tokens in persist middleware if they are long-lived; rely on backend refresh or httpOnly cookies where possible.
+
+## Component Pattern
+
+- Use forwardRef for reusable form controls. Prefer semantic HTML and ARIA where needed for accessibility.
+
+```typescript
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ variant = 'default', size = 'md', className, ...props }, ref) => (
+    <button
+      ref={ref}
+      className={cn(baseStyles, variants[variant], sizes[size], className)}
+      {...props}
+    />
+  )
+);
+Button.displayName = 'Button';
+```
+
+## Styling
+
+- Use Tailwind CSS. Compose with `cn()` or template literals. Keep variant and size maps in the component.
+- Use consistent spacing scale and typography; ensure sufficient contrast for text (accessibility).
+
+## Formatting and Structure
+
+- Keep components small and focused. Extract form logic into hooks or server actions.
+- Use proper loading and error states for async UI; do not expose raw error details from the API to the user when they contain internal or security-related information.

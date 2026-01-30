@@ -1,0 +1,72 @@
+---
+description: Testing patterns with Jest and Supertest
+globs: "**/*.test.ts"
+alwaysApply: false
+---
+
+# Testing Patterns
+
+## API Integration Tests (Supertest)
+
+```typescript
+import request from 'supertest';
+import { app } from '../index';
+
+describe('POST /api/auth/register', () => {
+  const testUser = {
+    username: 'testuser_' + Date.now(),
+    email: `test_${Date.now()}@example.com`,
+    password: 'TestPass123!',
+  };
+
+  it('should register a new user', async () => {
+    const response = await request(app)
+      .post('/api/auth/register')
+      .send(testUser)
+      .expect(201);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.user).toHaveProperty('id');
+  });
+
+  // Cleanup
+  afterAll(async () => {
+    await query('DELETE FROM app_users WHERE email = $1', [testUser.email]);
+  });
+});
+```
+
+## Unit Tests
+
+```typescript
+describe('hashPassword', () => {
+  it('should hash a password', async () => {
+    const hash = await hashPassword('testpass');
+    expect(hash).toBeDefined();
+    expect(hash).not.toBe('testpass');
+  });
+});
+```
+
+## Test Structure
+
+- Use `describe` blocks for grouping
+- Use `it` for individual test cases
+- Use `beforeAll/afterAll` for setup/teardown
+- Generate unique test data with timestamps
+
+## Assertions
+
+```typescript
+expect(response.body.success).toBe(true);
+expect(response.body.data).toHaveProperty('tokens');
+expect(response.body.error).toBe('Invalid credentials');
+```
+
+## Running Tests
+
+```bash
+npm test              # Run all tests
+npm run test:watch    # Watch mode
+npm run test:coverage # With coverage
+```

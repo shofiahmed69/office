@@ -50,6 +50,10 @@ tmp/
 *CREDENTIALS*
 *password*
 *PASSWORD*
+*api*key*
+*API*KEY*
+*secret*
+*SECRET*
 DB_CREDENTIALS.md
 DATABASE_SETUP_COMPLETE.md
 docs/DATABASE_CONNECTION.md
@@ -57,3 +61,6 @@ scripts/setup-db-ec2.sh
 .env
 .env.*
 !.env.example
+
+# Frontend: never commit keys or secrets (NEXT_PUBLIC_ is exposed to browser)
+# Only NEXT_PUBLIC_API_URL and non-sensitive config belong in .env.example

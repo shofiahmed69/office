@@ -1,0 +1,75 @@
+---
+description: Code style and formatting rules
+alwaysApply: true
+---
+
+# Code Style
+
+## Prettier Config (enforced)
+
+```json
+{
+  "semi": false,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "es5"
+}
+```
+
+## TypeScript
+
+```typescript
+// ✅ Use interfaces for objects
+interface User {
+  id: number;
+  email: string;
+}
+
+// ✅ Use type for unions/aliases
+type Status = 'active' | 'inactive';
+
+// ✅ Explicit return types for public functions
+async function getUser(id: number): Promise<User> { }
+
+// ✅ Prefer const assertions
+const ROLES = { ADMIN: 1, USER: 2 } as const;
+
+// ❌ Avoid any - use unknown or proper types
+function bad(data: any) { }
+```
+
+## Naming
+
+| Type | Convention | Example |
+|------|------------|---------|
+| Files | kebab-case | `auth.service.ts` |
+| Classes | PascalCase | `AuthService` |
+| Functions | camelCase | `getUserById` |
+| Constants | SCREAMING_SNAKE | `MAX_RETRIES` |
+| Interfaces | PascalCase | `UserProfile` |
+
+## Imports Order
+
+1. Node built-ins
+2. External packages
+3. Internal packages (`@scholarpass/shared`)
+4. Relative imports
+
+```typescript
+import { Request, Response } from 'express';
+import { User } from '@scholarpass/shared';
+import { query } from '../config/database';
+import { sendSuccess } from '../utils/response.utils';
+```
+
+## Comments
+
+```typescript
+// ✅ GOOD: Explains why, not what
+// Reset failed attempts to prevent lockout on successful login
+await query('UPDATE app_users SET access_failed_count = 0 WHERE id = $1', [id]);
+
+// ❌ BAD: Explains what (obvious from code)
+// Set count to zero
+await query('UPDATE app_users SET access_failed_count = 0 WHERE id = $1', [id]);
+```

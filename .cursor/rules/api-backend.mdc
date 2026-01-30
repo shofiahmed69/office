@@ -1,0 +1,87 @@
+---
+description: Express API backend patterns and conventions
+globs: apps/api/**/*.ts
+alwaysApply: false
+---
+
+# API Backend Patterns
+
+## Architecture (Controller → Service → Database)
+
+```typescript
+// ❌ BAD: Business logic in controller
+async register(req, res) {
+  const hash = await bcrypt.hash(req.body.password, 10);
+  await db.query('INSERT INTO users...', [hash]);
+}
+
+// ✅ GOOD: Controller delegates to service
+async register(req, res, next) {
+  try {
+    const user = await authService.register(req.body);
+    sendSuccess(res, { user }, 'Registration successful', 201);
+  } catch (error) {
+    next(error);
+  }
+}
+```
+
+## Error Handling
+
+Use `AppError` class and pass errors to `next()`:
+
+```typescript
+// In service
+throw new AppError('User already exists', 409);
+
+// In controller
+} catch (error) {
+  next(error); // Error middleware handles it
+}
+```
+
+## Response Utilities
+
+```typescript
+import { sendSuccess, sendError, sendPaginated } from '../utils/response.utils';
+
+sendSuccess(res, data, 'Message', 201);
+sendPaginated(res, items, page, limit, total);
+```
+
+## Validation
+
+Use express-validator in routes:
+
+```typescript
+router.post('/register', [
+  body('email').isEmail().withMessage('Valid email required'),
+  body('password').isLength({ min: 8 }),
+  validateRequest,
+], controller.register);
+```
+
+## Database Queries
+
+Use parameterized queries with `query()` helper:
+
+```typescript
+const result = await query(
+  'SELECT * FROM app_users WHERE email = $1',
+  [email]
+);
+```
+
+## Swagger Documentation
+
+Add JSDoc comments for API docs:
+
+```typescript
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Authentication]
+ */
+```

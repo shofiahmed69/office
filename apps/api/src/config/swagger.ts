@@ -149,8 +149,16 @@ const options: swaggerJsdoc.Options = {
         description: 'User management endpoints',
       },
       {
+        name: 'Assessments',
+        description: 'Skill assessment endpoints',
+      },
+      {
         name: 'Roadmaps',
         description: 'Learning roadmap endpoints',
+      },
+      {
+        name: 'Content',
+        description: 'Educational content endpoints',
       },
       {
         name: 'Study Buddies',
@@ -161,8 +169,16 @@ const options: swaggerJsdoc.Options = {
         description: 'Study session endpoints',
       },
       {
-        name: 'Content',
-        description: 'Educational content endpoints',
+        name: 'AI Assistant',
+        description: 'AI-powered Q&A and transcription endpoints',
+      },
+      {
+        name: 'Analytics',
+        description: 'Analytics and progress tracking endpoints',
+      },
+      {
+        name: 'Admin',
+        description: 'Admin-only management endpoints',
       },
       {
         name: 'Health',
