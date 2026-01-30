@@ -1,15 +1,22 @@
 # Dependencies
 node_modules/
+.pnp
+.pnp.js
 
 # Environment and secrets (sensitive data)
 .env
 .env.local
 .env.*.local
+!.env.example
+*.pem
+*.key
 
 # Logs
 logs/
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # OS
 .DS_Store
@@ -20,8 +27,19 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+*~
 
 # Build / output
 dist/
 build/
 coverage/
+.next/
+out/
+
+# Turbo
+.turbo/
+
+# Temporary
+temp/
+tmp/
+*.tmp
