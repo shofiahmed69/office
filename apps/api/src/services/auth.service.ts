@@ -90,7 +90,14 @@ export class AuthService {
   async refreshToken(refreshToken: string): Promise<AuthTokens> {
     // Verify refresh token
     const { verifyRefreshToken } = await import('../utils/jwt.utils');
-    const payload = verifyRefreshToken(refreshToken);
+    const decoded = verifyRefreshToken(refreshToken);
+
+    // Extract only the necessary payload fields (exclude iat, exp, etc.)
+    const payload = {
+      userId: decoded.userId,
+      email: decoded.email,
+      role: decoded.role,
+    };
 
     // Generate new tokens
     return {
