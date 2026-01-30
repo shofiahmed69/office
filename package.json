@@ -1,0 +1,20 @@
+{
+  "name": "scholarpass-backend",
+  "version": "1.0.0",
+  "description": "Master data and courses API backend",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "db:migrate": "node src/db/migrate.js",
+    "db:seed": "node src/db/seed.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "redis": "^4.6.12"
+  }
+}
