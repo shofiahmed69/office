@@ -15,6 +15,7 @@ import logger from './config/logger';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import healthRoutes from './routes/health.routes';
+import docsRoutes from './routes/docs.routes';
 
 // Load environment variables
 dotenv.config();
@@ -64,8 +65,10 @@ app.use((req, res, next) => {
 });
 
 // Health check routes (no /api prefix)
-app.use('/health', healthRoutes);
-app.use('/ready', healthRoutes);
+app.use(healthRoutes);
+
+// API Documentation
+app.use('/api/docs', docsRoutes);
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -110,24 +113,25 @@ io.on('connection', (socket) => {
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// Start server
-const PORT = process.env.PORT || 3001;
+// Start server (only if not in test mode)
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT || 3001;
 
-httpServer.listen(PORT, () => {
-  logger.info(`🚀 ScholarPass API running on http://localhost:${PORT}`);
-  logger.info(`🔌 WebSocket server ready`);
-  logger.info(`📊 Health check: http://localhost:${PORT}/health`);
-  logger.info(`🎯 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  httpServer.close(() => {
-    logger.info('Server closed');
-    process.exit(0);
+  httpServer.listen(PORT, () => {
+    logger.info(`🚀 ScholarPass API running on http://localhost:${PORT}`);
+    logger.info(`🔌 WebSocket server ready`);
+    logger.info(`📊 Health check: http://localhost:${PORT}/health`);
+    logger.info(`🎯 Environment: ${process.env.NODE_ENV || 'development'}`);
   });
-});
 
-export { io };
-export default app;
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    logger.info('SIGTERM received, shutting down gracefully');
+    httpServer.close(() => {
+      logger.info('Server closed');
+      process.exit(0);
+    });
+  });
+}
+
+export { app, httpServer, io };

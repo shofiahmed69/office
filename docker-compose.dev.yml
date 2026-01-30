@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database (Development)
+  postgres:
+    image: postgres:16-alpine
+    container_name: scholarpass-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: scholarpass_dev
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - scholarpass-dev-network
+
+  # Redis Cache (Development)
+  redis:
+    image: redis:7-alpine
+    container_name: scholarpass-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - scholarpass-dev-network
+
+  # PgAdmin (Database Management)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: scholarpass-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@scholarpass.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - scholarpass-dev-network
+    profiles:
+      - tools
+
+  # Redis Commander (Redis Management)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: scholarpass-redis-commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - scholarpass-dev-network
+    profiles:
+      - tools
+
+volumes:
+  postgres_dev_data:
+    driver: local
+
+networks:
+  scholarpass-dev-network:
+    driver: bridge

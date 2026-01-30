@@ -1,0 +1,54 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build applications
+        run: npm run build
+
+      - name: Run tests
+        run: npm run test:ci
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+          REDIS_URL: ${{ secrets.STAGING_REDIS_URL }}
+          JWT_SECRET: ${{ secrets.STAGING_JWT_SECRET }}
+          JWT_REFRESH_SECRET: ${{ secrets.STAGING_JWT_REFRESH_SECRET }}
+
+      - name: Deploy to Staging Server
+        run: |
+          echo "🚀 Deploying to staging environment..."
+          # Add your deployment commands here
+          # Examples:
+          # - Docker push to registry
+          # - Deploy to cloud platform (AWS, GCP, Azure)
+          # - Update Kubernetes manifests
+          # - Trigger deployment webhook
+
+      - name: Notify deployment
+        if: success()
+        run: echo "✅ Staging deployment successful!"
+
+      - name: Notify failure
+        if: failure()
+        run: echo "❌ Staging deployment failed!"
