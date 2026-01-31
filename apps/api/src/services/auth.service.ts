@@ -45,7 +45,8 @@ export class AuthService {
       throw new AppError('Invalid credentials', 401);
     }
 
-    const userRow = result.rows[0];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userRow = result.rows[0] as any;
 
     // Check if account is locked
     if (userRow.account_lock) {
@@ -56,7 +57,7 @@ export class AuthService {
     const isValid = await comparePassword(password, userRow.password_hash);
     if (!isValid) {
       const MAX_ATTEMPTS = 5;
-      const currentFailedCount = (userRow.access_failed_count || 0) + 1;
+      const currentFailedCount = (Number(userRow.access_failed_count) || 0) + 1;
 
       let updateQuery = 'UPDATE app_users SET access_failed_count = access_failed_count + 1';
 

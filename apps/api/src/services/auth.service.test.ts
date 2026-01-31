@@ -55,13 +55,15 @@ describe('AuthService', () => {
       // Current implementation only increments count
       // We want to VERIFY that it attempts to lock (which should fail now)
 
-      const updateCall = mockQuery.mock.calls[1];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateCall = mockQuery.mock.calls[1] as any[];
       expect(updateCall).toBeDefined();
 
       // With current implementation, it just updates count
       // 'UPDATE app_users SET access_failed_count = access_failed_count + 1 WHERE id = $1'
 
-      const updateQuery = updateCall[0];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateQuery = updateCall[0] as string;
 
       // In the new implementation, we expect 'account_lock = true'
       // So checking for it now should FAIL
