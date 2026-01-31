@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, Clock, CheckCircle, Loader2 } from 'lucide-react'
+import { ArrowLeft, Clock, CheckCircle, Loader2, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { VideoEmbed } from '@/components/ui/video-embed'
 import { StaggerContainer, StaggerItem } from '@/components/motion'

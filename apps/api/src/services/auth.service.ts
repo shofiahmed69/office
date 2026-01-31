@@ -88,9 +88,9 @@ export class AuthService {
       refreshToken: generateRefreshToken(payload),
     };
 
-    // Reset failed attempts
+    // Reset failed attempts and unlock account
     await query(
-      'UPDATE app_users SET access_failed_count = 0 WHERE id = $1',
+      'UPDATE app_users SET access_failed_count = 0, account_lock = false WHERE id = $1',
       [userRow.id]
     );
 

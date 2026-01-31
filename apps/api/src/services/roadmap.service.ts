@@ -135,9 +135,10 @@ async function upgradeRoadmapModules(roadmap: Record<string, unknown>): Promise<
   const conceptsTested = (oldModules[0]?.topics ?? []) as string[]
   const skillGaps: Record<string, number> = (roadmap.skill_gaps ?? roadmap.skillGaps) as Record<string, number> ?? {}
 
-  let newModules: RoadmapModule[] = await generateCurriculumWithAI(subject, learningGoal, weakPoints, conceptsTested)
-  if (!newModules || newModules.length === 0) {
-    newModules = buildModulesFromAssessment(subject, weakPoints, conceptsTested, skillGaps)
+  const aiModules = await generateCurriculumWithAI(subject, learningGoal, weakPoints, conceptsTested);
+  let newModules: RoadmapModule[] = aiModules ?? [];
+  if (newModules.length === 0) {
+    newModules = buildModulesFromAssessment(subject, weakPoints, conceptsTested, skillGaps);
   }
   const totalHours = newModules.reduce((sum, m) => sum + m.estimatedHours, 0)
   const hoursPerWeek = Number(roadmap.hours_per_week ?? roadmap.hoursPerWeek ?? 10) || 10
@@ -284,15 +285,16 @@ export class RoadmapService {
       }
     }
 
-    let modules: RoadmapModule[] = await generateCurriculumWithAI(
+    const aiModules = await generateCurriculumWithAI(
       data.subject,
       data.learningGoal,
       weakPoints,
       conceptsTested
-    )
-    if (!modules || modules.length === 0) {
-      logger.info('[Roadmap] Using fallback curriculum (AI unavailable or empty)')
-      modules = buildModulesFromAssessment(data.subject, weakPoints, conceptsTested, skillGaps)
+    );
+    let modules: RoadmapModule[] = aiModules ?? [];
+    if (modules.length === 0) {
+      logger.info('[Roadmap] Using fallback curriculum (AI unavailable or empty)');
+      modules = buildModulesFromAssessment(data.subject, weakPoints, conceptsTested, skillGaps);
     }
 
     const totalHours = modules.reduce((sum, m) => sum + m.estimatedHours, 0);
@@ -328,13 +330,14 @@ export class RoadmapService {
       throw new AppError('Roadmap not found', 404);
     }
     let row = result.rows[0] as Record<string, unknown>;
-    const roadmapData = row.roadmap_data ?? row.roadmapData as { modules?: RoadmapModule[] } | undefined;
+    const roadmapData = (row.roadmap_data ?? row.roadmapData) as { modules?: RoadmapModule[] } | undefined;
     const modules = roadmapData?.modules ?? [];
     if (needsModulesUpgrade(modules)) {
-      logger.info('[Roadmap] Upgrading existing roadmap', { roadmapId })
-      row = await upgradeRoadmapModules(row) as Roadmap;
+      logger.info('[Roadmap] Upgrading existing roadmap', { roadmapId });
+      const upgraded = await upgradeRoadmapModules(row);
+      return upgraded as unknown as Roadmap;
     }
-    return row as Roadmap;
+    return row as unknown as Roadmap;
   }
 
   async getUserRoadmaps(userId: number): Promise<Roadmap[]> {
@@ -345,14 +348,14 @@ export class RoadmapService {
     const rows = result.rows as Record<string, unknown>[];
     const out: Roadmap[] = [];
     for (const row of rows) {
-      const roadmapData = row.roadmap_data ?? row.roadmapData as { modules?: RoadmapModule[] } | undefined;
+      const roadmapData = (row.roadmap_data ?? row.roadmapData) as { modules?: RoadmapModule[] } | undefined;
       const modules = roadmapData?.modules ?? [];
       if (needsModulesUpgrade(modules)) {
-        logger.info('[Roadmap] Upgrading roadmap to new curriculum (list)', { roadmapId: row.id })
+        logger.info('[Roadmap] Upgrading roadmap to new curriculum (list)', { roadmapId: row.id });
         const upgraded = await upgradeRoadmapModules(row);
-        out.push(upgraded as Roadmap);
+        out.push(upgraded as unknown as Roadmap);
       } else {
-        out.push(row as Roadmap);
+        out.push(row as unknown as Roadmap);
       }
     }
     return out;

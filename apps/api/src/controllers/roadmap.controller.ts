@@ -6,9 +6,13 @@ import courseGeneratorService from '../services/courseGenerator.service';
 import { sendSuccess } from '../utils/response.utils';
 import { RoadmapModule } from '../types';
 
-async function enrichRoadmapWithSubContents(roadmap: Record<string, unknown>): Promise<Record<string, unknown>> {
+// Helper to safely enrich roadmap objects with sub-content
+async function enrichRoadmapWithSubContents(roadmap: any): Promise<any> {
+  if (!roadmap || typeof roadmap !== 'object') return roadmap;
+
   const roadmapId = Number(roadmap.id);
   if (!Number.isInteger(roadmapId)) return roadmap;
+
   const roadmapData = (roadmap.roadmapData ?? roadmap.roadmap_data) as { modules?: RoadmapModule[] } | undefined;
   const modules = roadmapData?.modules ?? [];
   if (modules.length === 0) return roadmap;
@@ -24,7 +28,7 @@ export class RoadmapController {
   async generate(req: Request, res: Response, next: NextFunction) {
     try {
       const roadmap = await roadmapService.generateRoadmap(req.user!.userId, req.body);
-      const roadmapId = roadmap.id ?? (roadmap as { id: number }).id;
+      const roadmapId = roadmap.id;
       try {
         await courseGeneratorService.generateForRoadmap(req.user!.userId, roadmapId, {
           maxVideosPerModule: 4,
