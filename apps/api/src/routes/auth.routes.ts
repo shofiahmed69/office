@@ -131,19 +131,6 @@ router.post(
  *       403:
  *         description: Account is locked
  */
-router.post(
-  '/register',
-  [
-    body('username').trim().isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
-    body('email').isEmail().withMessage('Valid email required'),
-    body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-    body('firstName').trim().notEmpty().withMessage('First name required'),
-    body('lastName').trim().notEmpty().withMessage('Last name required'),
-    validateRequest,
-  ],
-  authController.register
-);
-
 // POST /api/auth/login
 router.post(
   '/login',
