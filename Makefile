@@ -90,10 +90,6 @@ docker-clean: ## Remove Docker containers and volumes
 	docker system prune -f
 
 # Database commands
-db-migrate: ## Run database migrations
-	@echo '$(BLUE)Running database migrations...$(NC)'
-	cd apps/api && npm run migrate
-
 db-seed: ## Seed database
 	@echo '$(BLUE)Seeding database...$(NC)'
 	cd apps/api && npm run seed

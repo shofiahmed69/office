@@ -332,6 +332,69 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 - Add tests for new features
 - Update documentation
 
+## 🗄️ Database Structure
+
+PostgreSQL is the primary database. The schema below assumes a base `app_users` table exists (id, username, email, password hash, etc.). Apply the structure in order when setting up a new database.
+
+### Prerequisite: app_users
+
+Ensure `app_users` has at least: `id` (SERIAL PRIMARY KEY), `username`, `email`, and these columns (add if missing):
+
+- `active_or_archive` BOOLEAN DEFAULT TRUE  
+- `account_lock` BOOLEAN DEFAULT FALSE  
+- `access_failed_count` INTEGER DEFAULT 0  
+- `email_confirmed` BOOLEAN DEFAULT FALSE  
+- `first_name`, `last_name` VARCHAR(255)  
+- `primary_role_id` INTEGER (FK to roles table if applicable)  
+- `created_at`, `updated_at` TIMESTAMP  
+
+### Core tables
+
+| Table | Purpose |
+|-------|--------|
+| **app_user_tags** | User skills/interests; rating_score 1–10, source_type, ai_suggested, etc. |
+| **user_skill_assessments** | Assessment results; subject_id, subject_name, skill_scores (JSONB), weak_points, concepts_tested (JSONB) |
+| **user_learning_roadmaps** | Learning roadmaps; subject, learning_goal, skill_gaps, roadmap_data (JSONB), hours_per_week, estimated_weeks, status, progress_percentage |
+| **roadmap_modules** | Modules per roadmap; roadmap_id FK, module_name, topics (JSONB), estimated_hours, sequence_order, status |
+| **content_sources** | External content sources; name, type, base_url, api_key_encrypted, is_active |
+| **educational_content** | Content items; source_id FK, external_id, title, description, content_url, thumbnail_url, duration_seconds, difficulty_level, topics (JSONB), quality_score. UNIQUE (source_id, external_id) |
+| **user_content_progress** | Per-user watch progress; user_id, content_id, watch_time_seconds, last_position, is_completed. UNIQUE (user_id, content_id) |
+| **roadmap_content** | Links content to roadmap modules; roadmap_id, content_id, module_id, sequence_order. UNIQUE (roadmap_id, content_id, module_id) |
+| **study_buddy_matches** | Buddy requests; requester_user_id, requested_user_id, match_score, status (e.g. pending). UNIQUE (requester, requested) |
+| **study_buddies** | Connected pairs; user_id_1, user_id_2, total_sessions, is_active. UNIQUE (user_id_1, user_id_2) |
+| **buddy_assignments** | Assignments; buddy_id FK, roadmap_id, module_id, status |
+| **user_study_preferences** | One row per user; available_times, timezone, preferred_subjects, learning_style, max_study_buddies, is_findable |
+| **study_sessions** | Sessions; host_user_id, study_buddy_user_id, video_call_room_id, video_call_url, status, scheduled_start_time, duration_minutes, study_topics (JSONB), learning_goals (JSONB) |
+| **study_session_transcription_chunks** | Transcript chunks; session_id FK, speaker_user_id, transcript_text, sequence_number, confidence_score |
+| **study_session_ai_assistance** | AI Q&A per session; session_id, user_id, question_text, ai_response_text, was_helpful |
+| **attention_tracking_data** | Focus metrics; session_id, user_id, focus_percentage, total_samples, focused_samples, distraction_events |
+| **app_notifications** | User notifications; user_id, title, message, notification_type, is_read |
+| **admin_audit_log** | Admin actions; admin_user_id, action, details (JSONB) |
+| **topic_video_suggestions** | Cached video suggestions per topic; topic_normalized, external_id, title, description, thumbnail_url, content_url, duration_seconds, channel_title, source. UNIQUE (topic_normalized, external_id) |
+
+### Indexes (main)
+
+- `app_user_tags`: user_id, (user_id, is_filled)  
+- `user_skill_assessments`: user_id, subject_name  
+- `user_learning_roadmaps`: user_id, status  
+- `roadmap_modules`: roadmap_id  
+- `educational_content`: GIN(topics), GIN(to_tsvector title/description)  
+- `user_content_progress`: user_id  
+- `roadmap_content`: roadmap_id, (roadmap_id, module_id)  
+- `study_sessions`: host_user_id, study_buddy_user_id, status, scheduled_start_time  
+- `study_session_transcription_chunks`: (session_id, sequence_number)  
+- `study_session_ai_assistance`: session_id  
+- `attention_tracking_data`: session_id, user_id  
+- `app_notifications`: user_id, (user_id, is_read)  
+- `admin_audit_log`: admin_user_id, created_at  
+- `topic_video_suggestions`: topic_normalized, (topic_normalized, created_at DESC)  
+
+### Seed / bootstrap
+
+- Insert at least one `content_sources` row for YouTube (name `YouTube`, type `youtube`, base_url `https://www.youtube.com`, is_active true).
+
+Schema is documented here only; apply it manually or via your own migration/setup scripts.
+
 ## 📁 Environment Variables
 
 ### API (.env)
@@ -404,7 +467,7 @@ NEXT_PUBLIC_APP_VERSION=1.0.0
 - [ ] 🚧 E2E testing (Playwright)
 - [ ] 🚧 Performance monitoring
 - [ ] 🚧 Error tracking (Sentry)
-- [ ] 🚧 Database migrations
+- [x] ✅ Database structure documented in README
 - [ ] 🚧 API rate limiting per user
 
 ## 📞 Support

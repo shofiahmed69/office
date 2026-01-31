@@ -8,9 +8,9 @@ Scan date: repo scan for unprofessional and vulnerable patterns.
 
 ### 1. **Hardcoded database credentials (FIXED)**
 
-- **File:** `apps/api/run-migration.js` (removed; project uses `run-all-migrations.js` for `npm run migrate`)
+- **File:** `apps/api/run-migration.js` (removed)
 - **Issue:** Fallback `connectionString` contained a real DB URL with username/password.
-- **Fix applied:** Script removed; migrations are run via `npm run migrate` (run-all-migrations.js), which requires `DATABASE_URL` from `.env`.
+- **Fix applied:** Migration scripts removed; database structure is documented in the README. Schema is applied manually or via your own setup.
 
 ### 2. **Admin routes lack role check**
 
@@ -117,7 +117,7 @@ Scan date: repo scan for unprofessional and vulnerable patterns.
 
 | Severity | Count | Action |
 |----------|--------|--------|
-| Critical (fixed) | 1 | `run-migration.js` removed (use `run-all-migrations.js`); `.env.example` Ollama URL sanitized. |
+| Critical (fixed) | 1 | Migration scripts removed; DB structure in README; `.env.example` Ollama URL sanitized. |
 | Critical (open) | 4 | Add admin role check, validate JWT env at startup, implement logout blacklist, verify `.env` not in history. |
 | High | 4 | Replace console.* with logger, reduce `any`, resolve TODOs. |
 | Medium | 5 | Optional hardening (auth rate limits, CORS, etc.). |

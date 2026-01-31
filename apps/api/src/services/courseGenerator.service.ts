@@ -34,7 +34,7 @@ export class CourseGeneratorService {
     )
     if (result.rows.length === 0) {
       throw new AppError(
-        'YouTube content source not found. Run migrations to ensure content_sources has YouTube.',
+        'YouTube content source not found. Ensure content_sources has a YouTube row (see README Database structure).',
         503
       )
     }
