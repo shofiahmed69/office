@@ -46,7 +46,7 @@ export class AuthService {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const userRow = result.rows[0] as any;
+    const userRow = result.rows[0];
 
     // Check if account is locked
     if (userRow.account_lock) {

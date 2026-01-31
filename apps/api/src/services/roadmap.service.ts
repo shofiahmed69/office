@@ -110,7 +110,7 @@ function needsModulesUpgrade(modules: RoadmapModule[] | undefined): boolean {
   })
   if (hasOnlyGeneric && topics.length <= 4) return true
   return modules.some((m) => {
-    const t = (m.topics ?? []) as string[]
+    const t = (m.topics ?? [])
     return t.length === 3 && t.some((x) => x === 'Practice') && t.some((x) => x === 'Apply')
   })
 }
@@ -132,7 +132,7 @@ async function upgradeRoadmapModules(roadmap: Record<string, unknown>): Promise<
   const roadmapData = (roadmap.roadmap_data ?? roadmap.roadmapData) as { modules?: RoadmapModule[]; milestones?: unknown[] } | undefined
   const oldModules = roadmapData?.modules ?? []
   const weakPoints = extractWeakPointsFromModules(oldModules)
-  const conceptsTested = (oldModules[0]?.topics ?? []) as string[]
+  const conceptsTested = (oldModules[0]?.topics ?? [])
   const skillGaps: Record<string, number> = (roadmap.skill_gaps ?? roadmap.skillGaps) as Record<string, number> ?? {}
 
   const aiModules = await generateCurriculumWithAI(subject, learningGoal, weakPoints, conceptsTested);
@@ -329,7 +329,7 @@ export class RoadmapService {
     if (result.rows.length === 0) {
       throw new AppError('Roadmap not found', 404);
     }
-    let row = result.rows[0] as Record<string, unknown>;
+    const row = result.rows[0] as Record<string, unknown>;
     const roadmapData = (row.roadmap_data ?? row.roadmapData) as { modules?: RoadmapModule[] } | undefined;
     const modules = roadmapData?.modules ?? [];
     if (needsModulesUpgrade(modules)) {
