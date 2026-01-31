@@ -45,6 +45,7 @@ export class AuthService {
       throw new AppError('Invalid credentials', 401);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userRow = result.rows[0];
 
     // Check if account is locked
@@ -55,13 +56,24 @@ export class AuthService {
     // Verify password
     const isValid = await comparePassword(password, userRow.password_hash);
     if (!isValid) {
-      // Increment failed attempts (non-blocking - fire and forget)
-      void query(
-        'UPDATE app_users SET access_failed_count = access_failed_count + 1 WHERE id = $1',
-        [userRow.id]
-      ).catch(() => {
-        // Ignore errors for non-critical update
-      });
+      const MAX_ATTEMPTS = 5;
+      const currentFailedCount = (Number(userRow.access_failed_count) || 0) + 1;
+
+      let updateQuery = 'UPDATE app_users SET access_failed_count = access_failed_count + 1';
+
+      if (currentFailedCount >= MAX_ATTEMPTS) {
+        updateQuery += ', account_lock = true';
+      }
+
+      updateQuery += ' WHERE id = $1';
+
+      // Increment failed attempts and potentially lock account
+      await query(updateQuery, [userRow.id]);
+
+      if (currentFailedCount >= MAX_ATTEMPTS) {
+         throw new AppError('Account is locked', 403);
+      }
+
       throw new AppError('Invalid credentials', 401);
     }
 
@@ -77,13 +89,11 @@ export class AuthService {
       refreshToken: generateRefreshToken(payload),
     };
 
-    // Reset failed attempts (non-blocking - fire and forget)
-    void query(
-      'UPDATE app_users SET access_failed_count = 0 WHERE id = $1',
+    // Reset failed attempts and unlock account
+    await query(
+      'UPDATE app_users SET access_failed_count = 0, account_lock = false WHERE id = $1',
       [userRow.id]
-    ).catch(() => {
-      // Ignore errors for non-critical update
-    });
+    );
 
     // Return user without password_hash using destructuring
     const { password_hash: _password, ...user } = userRow;

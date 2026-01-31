@@ -29,7 +29,7 @@ function normalizeTopic(topic: string): string {
 
 /** Extract all course topic strings from a user's roadmaps (subject + module names + module topics). */
 export async function getCourseTopicsForUser(userId: number): Promise<string[]> {
-  const result = await query<{ subject: string; roadmap_data: { modules?: { name?: string; topics?: string[] }[] } }>(
+  const result = await query(
     `SELECT subject, roadmap_data FROM user_learning_roadmaps WHERE user_id = $1 AND status = 'active'`,
     [userId]
   )
@@ -128,14 +128,7 @@ export async function getSuggestionsForTopic(
   const limit = Math.min(Math.max(1, maxResults), 25)
 
   // Prefer cache if we have enough rows and newest is recent
-  const cacheResult = await query<{
-    external_id: string
-    title: string
-    thumbnail_url: string | null
-    duration_seconds: number
-    channel_title: string | null
-    created_at: Date
-  }>(
+  const cacheResult = await query(
     `SELECT external_id, title, thumbnail_url, duration_seconds, channel_title, created_at
      FROM topic_video_suggestions
      WHERE topic_normalized = $1
@@ -144,7 +137,14 @@ export async function getSuggestionsForTopic(
     [normalized, limit]
   )
 
-  const cacheRows = cacheResult.rows
+  const cacheRows = cacheResult.rows as {
+    external_id: string
+    title: string
+    thumbnail_url: string | null
+    duration_seconds: number
+    channel_title: string | null
+    created_at: Date
+  }[]
   const newestAt = cacheRows[0]?.created_at
   const cacheFresh =
     newestAt &&
