@@ -1,9 +1,7 @@
-/**
- * Authentication Service
- * Handles all authentication-related API calls
- */
+import { api } from './api';
+import type { User } from '@/stores/auth.store';
 
-import { apiClient } from '@/lib/api-client';
+export type { User };
 
 export interface LoginCredentials {
   email: string;
@@ -11,20 +9,11 @@ export interface LoginCredentials {
 }
 
 export interface RegisterData {
-  username: string;
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
-}
-
-export interface User {
-  id: number;
   username: string;
-  email: string;
   firstName: string;
   lastName: string;
-  role: string;
 }
 
 export interface AuthTokens {
@@ -38,23 +27,34 @@ export interface AuthResponse {
     user: User;
     tokens: AuthTokens;
   };
-  message: string;
+}
+
+export interface RefreshResponse {
+  success: boolean;
+  data: {
+    tokens: AuthTokens;
+  };
 }
 
 export const authService = {
-  async register(data: RegisterData): Promise<AuthResponse> {
-    return apiClient.post<AuthResponse>('/api/auth/register', data);
-  },
+  login: (credentials: LoginCredentials) =>
+    api.post<AuthResponse>('/api/auth/login', credentials),
 
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    return apiClient.post<AuthResponse>('/api/auth/login', credentials);
-  },
+  register: (data: RegisterData) =>
+    api.post<AuthResponse>('/api/auth/register', data),
 
-  async refreshToken(refreshToken: string): Promise<{ success: boolean; data: { tokens: AuthTokens } }> {
-    return apiClient.post('/api/auth/refresh', { refreshToken });
-  },
+  logout: () =>
+    api.post<{ success: boolean }>('/api/auth/logout'),
 
-  async logout(): Promise<{ success: boolean; message: string }> {
-    return apiClient.post('/api/auth/logout');
-  },
+  refreshToken: (refreshToken: string) =>
+    api.post<RefreshResponse>('/api/auth/refresh', { refreshToken }),
+
+  getMe: () =>
+    api.get<{ success: boolean; data: User }>('/api/users/me'),
+
+  forgotPassword: (email: string) =>
+    api.post<{ success: boolean }>('/api/auth/forgot-password', { email }),
+
+  resetPassword: (token: string, password: string) =>
+    api.post<{ success: boolean }>('/api/auth/reset-password', { token, password }),
 };

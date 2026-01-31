@@ -1,14 +1,15 @@
-import { Router } from 'express';
-import { body, param } from 'express-validator';
-import adminController from '../controllers/admin.controller';
-import { authenticateToken } from '../middleware/auth.middleware';
-import { validateRequest } from '../middleware/validation.middleware';
+import { Router } from 'express'
+import { body, param } from 'express-validator'
+import adminController from '../controllers/admin.controller'
+import { authenticateToken } from '../middleware/auth.middleware'
+import { requireAdmin } from '../middleware/requireAdmin.middleware'
+import { validateRequest } from '../middleware/validation.middleware'
 
-const router = Router();
+const router = Router()
 
-// All admin routes require authentication
-// TODO: Add admin role check middleware
-router.use(authenticateToken);
+// All admin routes require authentication and admin role
+router.use(authenticateToken)
+router.use(requireAdmin)
 
 /**
  * @swagger

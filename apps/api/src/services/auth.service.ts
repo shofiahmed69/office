@@ -1,6 +1,6 @@
 import { query } from '../config/database';
 import { hashPassword, comparePassword } from '../utils/password.utils';
-import { generateAccessToken, generateRefreshToken } from '../utils/jwt.utils';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt.utils';
 import { User, AuthTokens } from '../types';
 import { AppError } from '../middleware/error.middleware';
 
@@ -45,35 +45,31 @@ export class AuthService {
       throw new AppError('Invalid credentials', 401);
     }
 
-    const user = result.rows[0];
+    const userRow = result.rows[0];
 
     // Check if account is locked
-    if (user.account_lock) {
+    if (userRow.account_lock) {
       throw new AppError('Account is locked', 403);
     }
 
     // Verify password
-    const isValid = await comparePassword(password, user.password_hash);
+    const isValid = await comparePassword(password, userRow.password_hash);
     if (!isValid) {
-      // Increment failed attempts
-      await query(
+      // Increment failed attempts (non-blocking - fire and forget)
+      void query(
         'UPDATE app_users SET access_failed_count = access_failed_count + 1 WHERE id = $1',
-        [user.id]
-      );
+        [userRow.id]
+      ).catch(() => {
+        // Ignore errors for non-critical update
+      });
       throw new AppError('Invalid credentials', 401);
     }
 
-    // Reset failed attempts
-    await query(
-      'UPDATE app_users SET access_failed_count = 0 WHERE id = $1',
-      [user.id]
-    );
-
-    // Generate tokens
+    // Generate tokens immediately
     const payload = {
-      userId: user.id,
-      email: user.email,
-      role: user.role_name,
+      userId: userRow.id,
+      email: userRow.email,
+      role: userRow.role_name,
     };
 
     const tokens = {
@@ -81,15 +77,22 @@ export class AuthService {
       refreshToken: generateRefreshToken(payload),
     };
 
-    // Remove password from user object
-    delete user.password_hash;
+    // Reset failed attempts (non-blocking - fire and forget)
+    void query(
+      'UPDATE app_users SET access_failed_count = 0 WHERE id = $1',
+      [userRow.id]
+    ).catch(() => {
+      // Ignore errors for non-critical update
+    });
+
+    // Return user without password_hash using destructuring
+    const { password_hash: _password, ...user } = userRow;
 
     return { user, tokens };
   }
 
   async refreshToken(refreshToken: string): Promise<AuthTokens> {
     // Verify refresh token
-    const { verifyRefreshToken } = await import('../utils/jwt.utils');
     const decoded = verifyRefreshToken(refreshToken);
 
     // Extract only the necessary payload fields (exclude iat, exp, etc.)
@@ -108,3 +111,4 @@ export class AuthService {
 }
 
 export default new AuthService();
+

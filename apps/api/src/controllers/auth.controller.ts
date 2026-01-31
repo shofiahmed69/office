@@ -1,7 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
-import authService from '../services/auth.service';
-import { sendSuccess, sendError } from '../utils/response.utils';
-import logger from '../config/logger';
+import { Request, Response, NextFunction } from 'express'
+import authService from '../services/auth.service'
+import { sendSuccess, sendError } from '../utils/response.utils'
+import { addToBlacklist } from '../utils/tokenBlacklist'
+import logger from '../config/logger'
 
 export class AuthController {
   async register(req: Request, res: Response, next: NextFunction) {
@@ -44,10 +45,12 @@ export class AuthController {
 
   async logout(req: Request, res: Response, next: NextFunction) {
     try {
-      // TODO: Implement token blacklisting with Redis
-      sendSuccess(res, null, 'Logout successful');
+      const authHeader = req.headers['authorization']
+      const token = authHeader && authHeader.split(' ')[1]
+      if (token) await addToBlacklist(token)
+      sendSuccess(res, null, 'Logout successful')
     } catch (error) {
-      next(error);
+      next(error)
     }
   }
 }

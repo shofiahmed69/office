@@ -26,10 +26,10 @@ export class AssessmentService {
     // Create assessment record
     const result = await query(
       `INSERT INTO user_skill_assessments 
-       (user_id, subject_id, questions_answered, correct_answers, time_spent_seconds, skill_scores)
-       VALUES ($1, $2, 0, 0, 0, '{}')
+       (user_id, subject_id, subject_name, questions_answered, correct_answers, time_spent_seconds, skill_scores)
+       VALUES ($1, $2, $3, 0, 0, 0, '{}')
        RETURNING id`,
-      [userId, subjectId]
+      [userId, subjectId, subjectName]
     );
 
     const assessmentId = result.rows[0].id;
@@ -135,16 +135,119 @@ export class AssessmentService {
     };
   }
 
+  /**
+   * Complete assessment with results from frontend (AI flow: answers not submitted per question).
+   * Saves score, weak points, and concepts tested.
+   */
+  async completeAssessmentWithResults(
+    userId: number,
+    assessmentId: number,
+    payload: {
+      answers: Array<{ questionId: string; correctAnswer: number; selectedOption: number; topic: string }>
+      timeSpentSeconds: number
+    }
+  ): Promise<{
+    assessmentId: number
+    overallScore: number
+    skillScores: Record<string, number>
+    weakPoints: string[]
+    conceptsTested: string[]
+    correctAnswers: number
+    questionsAnswered: number
+  }> {
+    const { answers, timeSpentSeconds } = payload
+    const questionsAnswered = answers.length
+    let correctAnswers = 0
+    const topicScores: Record<string, { correct: number; total: number }> = {}
+    const conceptsSet = new Set<string>()
+
+    for (const a of answers) {
+      const correct = a.selectedOption === a.correctAnswer
+      if (correct) correctAnswers++
+      const topic = a.topic?.trim() || 'General'
+      conceptsSet.add(topic)
+      if (!topicScores[topic]) topicScores[topic] = { correct: 0, total: 0 }
+      topicScores[topic].total++
+      if (correct) topicScores[topic].correct++
+    }
+
+    const skillScores: Record<string, number> = {}
+    const weakPoints: string[] = []
+    const WEAK_THRESHOLD = 70
+
+    for (const [topic, scores] of Object.entries(topicScores)) {
+      const pct = scores.total > 0 ? Math.round((scores.correct / scores.total) * 100) : 0
+      skillScores[topic] = pct
+      if (pct < WEAK_THRESHOLD) weakPoints.push(topic)
+    }
+
+    const conceptsTested = Array.from(conceptsSet)
+    const overallScore = questionsAnswered > 0 ? Math.round((correctAnswers / questionsAnswered) * 100) : 0
+
+    try {
+      await query(
+        `UPDATE user_skill_assessments
+         SET questions_answered = $1, correct_answers = $2, time_spent_seconds = $3,
+             skill_scores = $4, weak_points = $5, concepts_tested = $6, completed_at = NOW()
+         WHERE id = $7 AND user_id = $8`,
+        [
+          questionsAnswered,
+          correctAnswers,
+          timeSpentSeconds,
+          JSON.stringify(skillScores),
+          JSON.stringify(weakPoints),
+          JSON.stringify(conceptsTested),
+          assessmentId,
+          userId,
+        ]
+      )
+    } catch {
+      await query(
+        `UPDATE user_skill_assessments
+         SET questions_answered = $1, correct_answers = $2, time_spent_seconds = $3,
+             skill_scores = $4, completed_at = NOW()
+         WHERE id = $5 AND user_id = $6`,
+        [questionsAnswered, correctAnswers, timeSpentSeconds, JSON.stringify(skillScores), assessmentId, userId]
+      )
+    }
+
+    return {
+      assessmentId,
+      overallScore,
+      skillScores,
+      weakPoints,
+      conceptsTested,
+      correctAnswers,
+      questionsAnswered,
+    }
+  }
+
   async getAssessmentHistory(userId: number): Promise<Assessment[]> {
-    const result = await query(
-      `SELECT id, user_id, subject_id, questions_answered, correct_answers, 
-              time_spent_seconds, skill_scores, completed_at
-       FROM user_skill_assessments
-       WHERE user_id = $1
-       ORDER BY completed_at DESC`,
-      [userId]
-    );
-    return result.rows;
+    let result: { rows: any[] }
+    try {
+      result = await query(
+        `SELECT id, user_id, subject_id, subject_name, questions_answered, correct_answers,
+                time_spent_seconds, skill_scores, weak_points, concepts_tested, completed_at, created_at
+         FROM user_skill_assessments
+         WHERE user_id = $1 AND completed_at IS NOT NULL
+         ORDER BY completed_at DESC NULLS LAST`,
+        [userId]
+      )
+    } catch {
+      result = await query(
+        `SELECT id, user_id, subject_id, subject_name, questions_answered, correct_answers,
+                time_spent_seconds, skill_scores, completed_at, created_at
+         FROM user_skill_assessments
+         WHERE user_id = $1 AND completed_at IS NOT NULL
+         ORDER BY completed_at DESC NULLS LAST`,
+        [userId]
+      )
+    }
+    return result.rows.map((row: any) => ({
+      ...row,
+      weak_points: row.weak_points ?? [],
+      concepts_tested: row.concepts_tested ?? [],
+    }))
   }
 }
 

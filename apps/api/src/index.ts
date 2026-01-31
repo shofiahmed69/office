@@ -26,27 +26,45 @@ import analyticsRoutes from './routes/analytics.routes';
 import adminRoutes from './routes/admin.routes';
 
 // Load environment variables
-dotenv.config();
+dotenv.config()
 
-const app = express();
+// Validate required secrets at startup
+const JWT_SECRET = process.env.JWT_SECRET
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET
+const MIN_SECRET_LENGTH = 32
+if (!JWT_SECRET || JWT_SECRET.length < MIN_SECRET_LENGTH) {
+  logger.error('JWT_SECRET is missing or too short (min 32 chars). Set it in .env')
+  process.exit(1)
+}
+if (!JWT_REFRESH_SECRET || JWT_REFRESH_SECRET.length < MIN_SECRET_LENGTH) {
+  logger.error('JWT_REFRESH_SECRET is missing or too short (min 32 chars). Set it in .env')
+  process.exit(1)
+}
+
+const app = express()
 const httpServer = createServer(app);
+
+// CORS: allow single origin or comma-separated list (e.g. http://localhost:3000,http://localhost:3002)
+const corsOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map((o) => o.trim())
+  : ['http://localhost:3000', 'http://localhost:3002']
 
 // Socket.io setup
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: corsOrigins,
     methods: ['GET', 'POST'],
     credentials: true,
   },
 });
 
 // Trust proxy
-app.set('trust proxy', 1);
+app.set('trust proxy', 1)
 
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: corsOrigins,
   credentials: true,
 }));
 

@@ -7,7 +7,8 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { authService, User, AuthTokens } from '@/services/auth.service';
+import { authService, User, AuthTokens, RegisterData } from '@/services/auth.service';
+import { APIError } from '@/lib/api-client';
 
 interface AuthState {
   user: User | null;
@@ -15,10 +16,10 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   login: (email: string, password: string) => Promise<void>;
-  register: (data: any) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
   setError: (error: string | null) => void;
@@ -44,16 +45,17 @@ export const useAuth = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
           });
-        } catch (error: any) {
+        } catch (error) {
+          const apiError = error as APIError;
           set({
-            error: error.data?.error || 'Login failed',
+            error: apiError.data?.error || 'Login failed',
             isLoading: false,
           });
           throw error;
         }
       },
 
-      register: async (data: any) => {
+      register: async (data: RegisterData) => {
         set({ isLoading: true, error: null });
         try {
           const response = await authService.register(data);
@@ -63,9 +65,10 @@ export const useAuth = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
           });
-        } catch (error: any) {
+        } catch (error) {
+          const apiError = error as APIError;
           set({
-            error: error.data?.error || 'Registration failed',
+            error: apiError.data?.error || 'Registration failed',
             isLoading: false,
           });
           throw error;

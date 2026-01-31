@@ -9,11 +9,17 @@ interface RequestOptions extends RequestInit {
   token?: string;
 }
 
+interface ErrorData {
+  error?: string;
+  message?: string;
+  [key: string]: unknown;
+}
+
 class APIError extends Error {
   constructor(
     public status: number,
     public statusText: string,
-    public data?: any
+    public data?: ErrorData
   ) {
     super(`API Error: ${status} ${statusText}`);
     this.name = 'APIError';
@@ -26,9 +32,9 @@ async function request<T>(
 ): Promise<T> {
   const { token, ...fetchOptions } = options;
 
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...fetchOptions.headers,
+    ...(fetchOptions.headers as Record<string, string>),
   };
 
   if (token) {
@@ -52,21 +58,21 @@ export const apiClient = {
   get: <T>(endpoint: string, options?: RequestOptions) =>
     request<T>(endpoint, { ...options, method: 'GET' }),
 
-  post: <T>(endpoint: string, data?: any, options?: RequestOptions) =>
+  post: <T>(endpoint: string, data?: unknown, options?: RequestOptions) =>
     request<T>(endpoint, {
       ...options,
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  put: <T>(endpoint: string, data?: any, options?: RequestOptions) =>
+  put: <T>(endpoint: string, data?: unknown, options?: RequestOptions) =>
     request<T>(endpoint, {
       ...options,
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
-  patch: <T>(endpoint: string, data?: any, options?: RequestOptions) =>
+  patch: <T>(endpoint: string, data?: unknown, options?: RequestOptions) =>
     request<T>(endpoint, {
       ...options,
       method: 'PATCH',

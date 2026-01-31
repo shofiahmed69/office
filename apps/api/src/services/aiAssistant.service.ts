@@ -96,7 +96,14 @@ export class AIAssistantService {
     };
   }
 
-  async getSessionAssistanceHistory(sessionId: number): Promise<any[]> {
+  async getSessionAssistanceHistory(sessionId: number, userId: number): Promise<any[]> {
+    const sessionCheck = await query(
+      `SELECT 1 FROM study_sessions WHERE id = $1 AND (host_user_id = $2 OR study_buddy_user_id = $2)`,
+      [sessionId, userId]
+    );
+    if (sessionCheck.rows.length === 0) {
+      throw new AppError('Session not found or access denied', 404);
+    }
     const result = await query(
       `SELECT ssaa.*, u.username
        FROM study_session_ai_assistance ssaa
@@ -108,7 +115,22 @@ export class AIAssistantService {
     return result.rows;
   }
 
-  async rateResponse(assistanceId: number, wasHelpful: boolean): Promise<void> {
+  async rateResponse(assistanceId: number, wasHelpful: boolean, userId: number): Promise<void> {
+    const assistance = await query(
+      `SELECT session_id FROM study_session_ai_assistance WHERE id = $1`,
+      [assistanceId]
+    );
+    if (assistance.rows.length === 0) {
+      throw new AppError('Assistance record not found', 404);
+    }
+    const sessionId = assistance.rows[0].session_id;
+    const sessionCheck = await query(
+      `SELECT 1 FROM study_sessions WHERE id = $1 AND (host_user_id = $2 OR study_buddy_user_id = $2)`,
+      [sessionId, userId]
+    );
+    if (sessionCheck.rows.length === 0) {
+      throw new AppError('Access denied to this assistance record', 403);
+    }
     await query(
       `UPDATE study_session_ai_assistance SET was_helpful = $1 WHERE id = $2`,
       [wasHelpful, assistanceId]

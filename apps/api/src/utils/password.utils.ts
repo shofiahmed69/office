@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 
-const SALT_ROUNDS = 10;
+const SALT_ROUNDS = 8; // Balanced security/performance (8 rounds ~100ms, 10 rounds ~300ms)
 
 /**
  * Hash a plain text password

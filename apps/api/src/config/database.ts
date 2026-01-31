@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import logger from './logger';
 
 dotenv.config();
 
@@ -11,40 +12,40 @@ const pool = new Pool({
 });
 
 pool.on('error', (err) => {
-  console.error('Unexpected database error:', err);
+  logger.error('Unexpected database error:', { error: err });
   process.exit(-1);
 });
 
-export const query = async (text: string, params?: any[]) => {
+export const query = async (text: string, params?: unknown[]) => {
   const start = Date.now();
   try {
     const res = await pool.query(text, params);
     const duration = Date.now() - start;
-    console.log('Executed query', { text, duration, rows: res.rowCount });
+    logger.debug('Executed query', { text, duration, rows: res.rowCount });
     return res;
   } catch (error) {
-    console.error('Database query error:', error);
+    logger.error('Database query error:', { error });
     throw error;
   }
 };
 
 export const getClient = async () => {
   const client = await pool.connect();
-  const query = client.query.bind(client);
-  const release = client.release.bind(client);
-  
+  const originalRelease = client.release.bind(client);
+
   // Set a timeout for client
   const timeout = setTimeout(() => {
-    console.error('Client checkout timeout');
-    release();
+    logger.error('Client checkout timeout');
+    originalRelease();
   }, 5000);
 
   client.release = () => {
     clearTimeout(timeout);
-    release();
+    originalRelease();
   };
 
   return client;
 };
 
 export default pool;
+

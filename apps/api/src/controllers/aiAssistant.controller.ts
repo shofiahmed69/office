@@ -27,8 +27,8 @@ export class AIAssistantController {
 
   async getAssistanceHistory(req: Request, res: Response, next: NextFunction) {
     try {
-      const sessionId = parseInt(req.params.sessionId);
-      const history = await aiAssistantService.getSessionAssistanceHistory(sessionId);
+      const sessionId = parseInt(req.params.sessionId, 10);
+      const history = await aiAssistantService.getSessionAssistanceHistory(sessionId, req.user!.userId);
       sendSuccess(res, { history });
     } catch (error) {
       next(error);
@@ -37,9 +37,9 @@ export class AIAssistantController {
 
   async rateResponse(req: Request, res: Response, next: NextFunction) {
     try {
-      const assistanceId = parseInt(req.params.assistanceId);
+      const assistanceId = parseInt(req.params.assistanceId, 10);
       const { wasHelpful } = req.body;
-      await aiAssistantService.rateResponse(assistanceId, wasHelpful);
+      await aiAssistantService.rateResponse(assistanceId, wasHelpful, req.user!.userId);
       sendSuccess(res, null, 'Rating recorded');
     } catch (error) {
       next(error);

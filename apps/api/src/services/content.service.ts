@@ -1,5 +1,5 @@
 import { query } from '../config/database';
-import { Content, ContentProgress } from '../types';
+import { Content, ContentProgress, SubContent } from '../types';
 import { AppError } from '../middleware/error.middleware';
 
 export class ContentService {
@@ -148,6 +148,48 @@ export class ContentService {
       [userId]
     );
     return result.rows;
+  }
+
+  /**
+   * Get content linked to a roadmap, grouped by module_id, for detailed module sub-contents.
+   */
+  async getContentByRoadmap(roadmapId: number): Promise<Record<number, SubContent[]>> {
+    const result = await query(
+      `SELECT rc.module_id, rc.sequence_order, ec.id as content_id, ec.title, ec.content_url,
+              ec.thumbnail_url, ec.duration_seconds, ec.external_id
+       FROM roadmap_content rc
+       JOIN educational_content ec ON ec.id = rc.content_id
+       WHERE rc.roadmap_id = $1
+       ORDER BY rc.module_id, rc.sequence_order`,
+      [roadmapId]
+    );
+    const byModule: Record<number, SubContent[]> = {};
+    for (const row of result.rows as Array<{
+      module_id: number;
+      sequence_order: number;
+      content_id: number;
+      title: string;
+      content_url: string;
+      thumbnail_url: string | null;
+      duration_seconds: number | null;
+      external_id: string;
+    }>) {
+      const list = byModule[row.module_id] ?? [];
+      list.push({
+        id: row.content_id,
+        contentId: row.content_id,
+        title: row.title,
+        type: 'video',
+        durationSeconds: row.duration_seconds ?? undefined,
+        durationMinutes: row.duration_seconds != null ? Math.round(row.duration_seconds / 60) : undefined,
+        externalId: row.external_id,
+        contentUrl: row.content_url,
+        thumbnailUrl: row.thumbnail_url ?? undefined,
+        sequenceOrder: row.sequence_order,
+      });
+      byModule[row.module_id] = list;
+    }
+    return byModule;
   }
 }
 

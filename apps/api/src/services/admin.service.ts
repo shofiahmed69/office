@@ -1,4 +1,5 @@
 import { query } from '../config/database';
+import logger from '../config/logger';
 import { User, AdminUserFilters, PlatformAnalytics } from '../types';
 import { AppError } from '../middleware/error.middleware';
 
@@ -214,8 +215,7 @@ export class AdminService {
         [adminUserId, action, JSON.stringify(details)]
       );
     } catch (error) {
-      // Log error but don't fail the operation
-      console.error('Failed to log admin action:', error);
+      logger.error('Failed to log admin action', { error: error instanceof Error ? error.message : String(error) })
     }
   }
 }

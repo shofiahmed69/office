@@ -7,7 +7,7 @@ export class AdminController {
     try {
       const { role, status, search, page, limit } = req.query;
       const result = await adminService.listUsers(
-        { role: role ? parseInt(role as string) : undefined, status: status as any, search: search as string },
+        { role: role ? parseInt(role as string) : undefined, status: status as 'active' | 'archived' | 'locked' | undefined, search: search as string },
         page ? parseInt(page as string) : 1,
         limit ? parseInt(limit as string) : 20
       );

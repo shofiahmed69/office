@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { query } from '../config/database';
 import { createClient } from 'redis';
+import ollamaService from '../services/ollama.service';
 
 const router = Router();
 
@@ -113,6 +114,40 @@ router.get('/ready', async (req: Request, res: Response) => {
     checks,
     timestamp: new Date().toISOString(),
   });
+});
+
+/**
+ * @swagger
+ * /health/ollama:
+ *   get:
+ *     summary: Check if Ollama AI service is reachable (for assessments)
+ *     tags: [Health]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Ollama is available
+ *       503:
+ *         description: Ollama is not reachable
+ */
+router.get('/health/ollama', async (req: Request, res: Response) => {
+  try {
+    const ok = await ollamaService.healthCheck();
+    const statusCode = ok ? 200 : 503;
+    res.status(statusCode).json({
+      ollama: ok,
+      model: ollamaService.getModelName(),
+      message: ok ? 'Ollama is available' : 'Ollama is not reachable',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(503).json({
+      ollama: false,
+      model: ollamaService.getModelName(),
+      message: 'Ollama check failed',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 /**

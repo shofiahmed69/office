@@ -103,6 +103,20 @@ export interface RoadmapData {
   milestones: Milestone[];
 }
 
+/** A single learning item (video, article, etc.) within a module */
+export interface SubContent {
+  id: number;
+  contentId: number;
+  title: string;
+  type: 'video' | 'article' | 'exercise';
+  durationMinutes?: number;
+  durationSeconds?: number;
+  externalId?: string;
+  contentUrl?: string;
+  thumbnailUrl?: string;
+  sequenceOrder: number;
+}
+
 export interface RoadmapModule {
   id: number;
   name: string;
@@ -114,6 +128,10 @@ export interface RoadmapModule {
   contentIds: number[];
   sequenceOrder: number;
   status: 'not_started' | 'in_progress' | 'completed';
+  startedAt?: string;
+  completedAt?: string;
+  /** Detailed learning items (videos, articles) for this module – populated when fetching roadmap */
+  subContents?: SubContent[];
 }
 
 export interface Milestone {

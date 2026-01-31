@@ -1,0 +1,40 @@
+---
+description: Do not work around failures with fallbacks; fix the root cause.
+alwaysApply: true
+---
+
+# No Fallbacks — Solve the Root Cause
+
+## Rule
+
+**Never add fallbacks to work around failures.** Fix the actual problem instead.
+
+- **Do not**: Return mock/static/placeholder data when an API or service fails.
+- **Do not**: Add "fallback" code paths that hide the real failure (e.g. "if API fails, return hardcoded list").
+- **Do**: Fix why the real path fails (correct API usage, response parsing, timeouts, instances, auth).
+- **Do**: Improve the real implementation (handle all response shapes, retries, better errors) so it works.
+
+## Examples
+
+```typescript
+// ❌ BAD: Fallback hides the problem
+if (videos.length === 0) return MOCK_VIDEOS
+
+// ❌ BAD: Workaround instead of fix
+catch (e) {
+  return getStaticFallback(query)
+}
+
+// ✅ GOOD: Fix the real implementation
+// Handle Piped/Invidious response shapes (items, relatedStreams, array), relax content-type, increase timeout, add instances.
+const rawItems = Array.isArray(data) ? data : (data?.items ?? data?.relatedStreams ?? [])
+```
+
+## When External Services Are Down
+
+If the root cause is "external service is down":
+
+- **Do**: Improve resilience of the real integration (more instances, timeouts, retries, correct parsing).
+- **Do not**: Substitute fake data so the UI "works" while the real integration is broken.
+
+User-facing message when the service is unavailable is acceptable (e.g. "Video search is temporarily unavailable. Try again in a few minutes.") — but do not return fake/mock data in place of fixing the integration.

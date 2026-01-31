@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { body, param } from 'express-validator';
 import { UserController } from '../controllers/user.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
+import { requireAdmin } from '../middleware/requireAdmin.middleware';
 import { validateRequest } from '../middleware/validation.middleware';
 
 const router = Router();
@@ -72,7 +73,7 @@ router.delete(
   userController.deleteTag
 );
 
-// GET /api/users (admin only - TODO: add admin middleware)
-router.get('/', userController.listUsers);
+// GET /api/users (admin only)
+router.get('/', requireAdmin, userController.listUsers);
 
 export default router;

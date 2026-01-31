@@ -1,12 +1,40 @@
 import { Request, Response, NextFunction } from 'express';
+import logger from '../config/logger';
 import roadmapService from '../services/roadmap.service';
+import contentService from '../services/content.service';
+import courseGeneratorService from '../services/courseGenerator.service';
 import { sendSuccess } from '../utils/response.utils';
+import { RoadmapModule } from '../types';
+
+async function enrichRoadmapWithSubContents(roadmap: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const roadmapId = Number(roadmap.id);
+  if (!Number.isInteger(roadmapId)) return roadmap;
+  const roadmapData = (roadmap.roadmapData ?? roadmap.roadmap_data) as { modules?: RoadmapModule[] } | undefined;
+  const modules = roadmapData?.modules ?? [];
+  if (modules.length === 0) return roadmap;
+
+  const contentByModule = await contentService.getContentByRoadmap(roadmapId);
+  for (const mod of modules) {
+    mod.subContents = contentByModule[mod.id] ?? [];
+  }
+  return roadmap;
+}
 
 export class RoadmapController {
   async generate(req: Request, res: Response, next: NextFunction) {
     try {
       const roadmap = await roadmapService.generateRoadmap(req.user!.userId, req.body);
-      sendSuccess(res, { roadmap }, 'Roadmap generated', 201);
+      const roadmapId = roadmap.id ?? (roadmap as { id: number }).id;
+      try {
+        await courseGeneratorService.generateForRoadmap(req.user!.userId, roadmapId, {
+          maxVideosPerModule: 4,
+          preferMit: true,
+        });
+      } catch (genErr) {
+        logger.warn('[roadmap] Course content generation failed (roadmap still created)', { error: genErr instanceof Error ? genErr.message : String(genErr) })
+      }
+      const enriched = await enrichRoadmapWithSubContents(roadmap);
+      sendSuccess(res, { roadmap: enriched }, 'Roadmap generated', 201);
     } catch (error) {
       next(error);
     }
@@ -14,9 +42,10 @@ export class RoadmapController {
 
   async get(req: Request, res: Response, next: NextFunction) {
     try {
-      const roadmapId = parseInt(req.params.id);
+      const roadmapId = parseInt(req.params.id, 10);
       const roadmap = await roadmapService.getRoadmap(req.user!.userId, roadmapId);
-      sendSuccess(res, { roadmap });
+      const enriched = await enrichRoadmapWithSubContents(roadmap);
+      sendSuccess(res, { roadmap: enriched });
     } catch (error) {
       next(error);
     }
